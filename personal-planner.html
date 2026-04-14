@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #141414;
+    --bg2:       #1c1c1c;
+    --bg3:       #212121;
+    --surface:   #262626;
+    --surface2:  #2e2e2e;
+    --border:    rgba(255,255,255,0.07);
+    --border2:   rgba(255,255,255,0.13);
+    --text:      #e8e0d4;
+    --text2:     #a09890;
+    --text3:     #5c5550;
+    --accent:    #7aab8a;
+    --accent2:   #4d7d5e;
+    --green:     #6a9e7f;
+    --amber:     #c9a84c;
+    --flag:      #c25f5f;
+    --blue:      #7aadcc;
+    --purple:    #9b9bcc;
+    --radius:    6px;
+    --radius2:   10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 44px 44px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 28px 32px 56px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border2);
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .header-left { display: flex; align-items: baseline; gap: 18px; }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 21px;
+    font-weight: 400;
+    color: var(--text);
+    letter-spacing: .01em;
+  }
+
+  .week-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: .05em;
+  }
+
+  .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all .15s;
+    letter-spacing: .02em;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--surface); color: var(--text); }
+  .btn.accent { background: rgba(77,125,94,.35); border-color: rgba(122,171,138,.4); color: #a8d4b5; }
+  .btn.accent:hover { background: rgba(77,125,94,.55); color: #c0e4ca; }
+  .btn.ghost { border-color: transparent; color: var(--text3); }
+  .btn.ghost:hover { color: var(--text2); background: var(--surface); border-color: var(--border); }
+
+  .week-nav { display: flex; align-items: center; gap: 3px; }
+
+  .view-tabs {
+    display: flex; gap: 2px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3px;
+  }
+  .view-tab {
+    font-size: 12px; padding: 4px 12px;
+    border-radius: 4px; border: none;
+    background: transparent; color: var(--text3);
+    cursor: pointer; transition: all .15s;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: .02em;
+  }
+  .view-tab.active { background: var(--surface2); color: var(--text); }
+
+  /* ── BRIEF PANEL ── */
+  #brief-panel, #debrief-panel {
+    display: none;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius2);
+    padding: 22px 24px;
+    margin-bottom: 20px;
+    animation: fadeIn .2s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+
+  .brief-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .brief-header h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px; font-weight: 400; color: var(--text2);
+  }
+  #brief-text, #debrief-text {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 300;
+    line-height: 1.65;
+    color: var(--text2);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 340px;
+    overflow-y: auto;
+    margin-bottom: 14px;
+  }
+  .brief-footer { display: flex; gap: 8px; align-items: center; }
+  .copy-confirm { font-size: 11px; color: var(--green); opacity: 0; transition: opacity .3s; font-family: 'DM Mono', monospace; }
+
+  /* ── COLUMNS ── */
+  .columns {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 8px;
+    align-items: start;
+  }
+
+  .col {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    padding: 14px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-height: 540px;
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
+    transition: border-color .15s, background .15s;
+  }
+  .col.drag-over { border-color: var(--accent2); background: rgba(77,125,94,.06); }
+  .col.backlog { border-style: dashed; border-color: var(--border); }
+  .col.today { border-color: rgba(122,171,138,.25); }
+
+  .col-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 2px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .col-day-info { display: flex; flex-direction: column; gap: 2px; }
+  .col-day {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px; font-weight: 400; color: var(--text2);
+  }
+  .col.today .col-day { color: var(--accent); }  .col-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; color: var(--text3);
+  }
+  .col-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; color: var(--text3);
+    background: var(--surface); border-radius: 8px;
+    padding: 1px 7px; margin-top: 1px;
+  }
+  .col-count.has { color: var(--text2); }
+
+  /* ── TASK CARD ── */
+  .task-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 9px 10px;
+    cursor: grab;
+    display: flex; flex-direction: column; gap: 5px;
+    transition: border-color .12s;
+    position: relative;
+  }
+  .task-card:hover { border-color: var(--border2); }
+  .task-card:active { cursor: grabbing; opacity: .75; }
+  .task-card.done { opacity: .4; }
+  .task-card.done .task-action { text-decoration: line-through; }
+  .task-card.flagged { border-left: 2px solid var(--flag); padding-left: 9px; }
+
+  .card-top { display: flex; gap: 7px; align-items: flex-start; }
+
+  .check {
+    width: 13px; height: 13px; min-width: 13px;
+    border: 1px solid var(--border2); border-radius: 3px;
+    margin-top: 2px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; transition: all .12s; flex-shrink: 0;
+  }
+  .check:hover { border-color: var(--green); }
+  .check.checked { background: rgba(106,158,127,.25); border-color: var(--green); color: var(--green); }
+
+  .card-body { flex: 1; min-width: 0; }
+
+  .task-project {
+    font-size: 9.5px; font-weight: 500;
+    color: var(--accent);
+    text-transform: uppercase; letter-spacing: .07em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 3px;
+  }
+
+  .task-action {
+    font-family: 'DM Mono', monospace;
+    font-size: 11.5px; font-weight: 300;
+    color: var(--text); line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .card-meta {
+    display: flex; align-items: center; gap: 4px;
+    flex-wrap: wrap; margin-top: 1px;
+  }
+
+  .tag {
+    font-size: 9px; padding: 1px 6px;
+    border-radius: 10px; font-weight: 400;
+    letter-spacing: .05em; text-transform: uppercase;
+    border: 1px solid;
+  }
+  .tag-selfcare { color: #c47fb5; border-color: rgba(196,127,181,.25); background: rgba(196,127,181,.07); }
+  .tag-home     { color: var(--amber);  border-color: rgba(201,168,76,.25);  background: rgba(201,168,76,.07); }
+  .tag-social   { color: var(--blue);   border-color: rgba(122,173,204,.25); background: rgba(122,173,204,.07); }
+  .tag-growth   { color: var(--purple); border-color: rgba(155,155,204,.25); background: rgba(155,155,204,.07); }
+  .tag-health   { color: var(--green);  border-color: rgba(106,158,127,.25); background: rgba(106,158,127,.07); }
+  .tag-other    { color: var(--text3);  border-color: var(--border);         background: transparent; }
+
+  .recur-tag {
+    font-size: 9px; color: var(--text3);
+    border: 1px dashed rgba(255,255,255,.1);
+    border-radius: 10px; padding: 1px 6px;
+  }
+
+  .move-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px; color: var(--text3);
+    margin-left: auto;
+  }
+  .move-count.flagged { color: var(--flag); }
+  .defer-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px; color: var(--amber);
+  }
+  .defer-count.flagged { color: var(--flag); font-weight: 500; }
+
+  .task-notes {
+    font-size: 10.5px; color: var(--text3);
+    font-style: italic; line-height: 1.45;
+    padding-top: 5px; border-top: 1px solid var(--border);
+    word-break: break-word;
+  }
+
+  .card-actions {
+    display: flex; gap: 3px; justify-content: flex-end;
+    margin-top: 1px;
+  }
+  .card-btn {
+    font-size: 10px; font-family: 'DM Sans', sans-serif;
+    background: transparent; border: none;
+    color: var(--text3); cursor: pointer;
+    padding: 2px 5px; border-radius: 3px;
+    transition: color .1s;
+  }
+  .card-btn:hover { color: var(--text2); background: var(--surface2); }
+  .card-btn.del:hover { color: var(--flag); }
+
+  .add-btn {
+    border: 1px dashed rgba(255,255,255,.06);
+    background: transparent; border-radius: var(--radius);
+    padding: 8px; font-size: 11px;
+    color: var(--text3); cursor: pointer;
+    text-align: center; width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    transition: all .15s; margin-top: auto;
+    letter-spacing: .03em;
+  }
+  .add-btn:hover { border-color: var(--accent2); color: var(--accent); background: rgba(77,125,94,.06); }
+
+  /* ── MODAL ── */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.72);
+    backdrop-filter: blur(5px);
+    z-index: 200;
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 52px 16px 32px;
+    overflow-y: auto;
+  }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius2);
+    padding: 28px;
+    width: 100%; max-width: 500px;
+    animation: slideUp .2s ease;
+  }
+  @keyframes slideUp {
+    from { opacity:0; transform:translateY(14px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 22px;
+  }
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px; font-weight: 400; color: var(--text);
+  }
+  .modal-close {
+    background: transparent; border: none;
+    color: var(--text3); cursor: pointer;
+    font-size: 20px; line-height: 1; padding: 0 4px;
+    border-radius: 4px;
+  }
+  .modal-close:hover { color: var(--text2); background: var(--surface); }
+
+  .form-group { margin-bottom: 15px; }
+  .form-label {
+    display: block; font-size: 10.5px; font-weight: 400;
+    color: var(--text2); letter-spacing: .06em;
+    text-transform: uppercase; margin-bottom: 7px;
+  }
+  .form-hint { font-size: 10px; color: var(--text3); text-transform: none; letter-spacing: 0; font-weight: 300; }
+
+  input, select, textarea {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 300;
+    outline: none;
+    transition: border-color .15s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: rgba(122,171,138,.5); }
+  input::placeholder, textarea::placeholder { color: var(--text3); font-size: 11.5px; }
+  textarea { resize: vertical; min-height: 66px; line-height: 1.55; }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235c5550'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    cursor: pointer;
+  }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .modal-footer {
+    display: flex; justify-content: flex-end; gap: 8px;
+    margin-top: 22px; padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── PROJECTS VIEW ── */
+  #view-projects { display: none; flex-direction: column; gap: 16px; }
+
+  .proj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+
+  .proj-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius2); padding: 16px;
+    cursor: pointer; transition: border-color .15s, background .15s;
+  }
+  .proj-card:hover { border-color: rgba(122,171,138,.35); background: rgba(77,125,94,.04); }
+  .proj-card-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px; color: var(--text); margin-bottom: 7px;
+    word-break: break-word;
+  }
+  .proj-card-stats { font-family: 'DM Mono', monospace; font-size: 10.5px; color: var(--text3); }
+  .proj-card-stats b { color: var(--text2); font-weight: 400; }
+
+  .proj-detail {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius2); padding: 20px;
+  }
+  .proj-detail-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px; margin-bottom: 16px; color: var(--text);
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+  th {
+    text-align: left; color: var(--text3); font-weight: 400;
+    padding: 7px 10px; border-bottom: 1px solid var(--border);
+    font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase;
+  }
+  td {
+    padding: 8px 10px; border-bottom: 1px solid var(--border);
+    color: var(--text2); vertical-align: top;
+    word-break: break-word; line-height: 1.45; font-size: 12px;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.015); }
+
+  .status-open { color: var(--amber); }
+  .status-done { color: var(--green); }
+
+  /* ── KEYBOARD HINT ── */
+  .kbd-hint {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; color: var(--text3);
+    margin-top: 12px; text-align: right;
+    letter-spacing: .02em;
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width: 768px) {
+    #app { padding: 0 0 80px; }
+
+    header {
+      padding: 14px 16px 12px;
+      margin-bottom: 0;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 50;
+    }
+    .header-left { gap: 10px; }
+    h1 { font-size: 17px; }
+    .week-label { font-size: 10px; }
+    .header-right { gap: 6px; width: 100%; }
+    .week-nav { flex: 1; }
+    .week-nav .btn { flex: 1; text-align: center; padding: 7px 6px; font-size: 12px; }
+    .view-tabs { display: none; }
+    .btn.export-btn, .btn.import-btn { display: none; }
+
+    /* brief panels */
+    #brief-panel, #debrief-panel {
+      margin: 0 12px 12px;
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+    .brief-header h3 { font-size: 12px; }
+    #brief-text, #debrief-text { font-size: 11px; max-height: 220px; }
+
+    /* day strip */
+    .day-strip {
+      display: flex;
+      overflow-x: auto;
+      gap: 0;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x mandatory;
+      padding: 0 4px;
+    }
+    .day-strip::-webkit-scrollbar { display: none; }
+    .day-pill {
+      flex-shrink: 0;
+      scroll-snap-align: start;
+      padding: 10px 10px 8px;
+      font-size: 11px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text3);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all .15s;
+      text-align: center;
+      min-width: 52px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .day-pill.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .day-pill.has-tasks .day-pill-name { font-weight: 500; color: var(--text2); }
+    .day-pill.active.has-tasks .day-pill-name { color: var(--accent); }
+    .day-pill-name { font-size: 11px; letter-spacing: .02em; }
+    .day-pill-date { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text3); }
+    .day-pill-dot  { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); margin-top: 2px; }
+
+    /* single day view */
+    .day-view {
+      padding: 14px 14px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .day-view-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .day-view-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      color: var(--text);
+    }
+    .day-view-date {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--text3);
+    }
+
+    /* hide desktop grid on mobile */
+    .columns { display: none !important; }
+    .kbd-hint { display: none; }
+
+    /* bottom nav bar */
+    .mobile-nav {
+      display: flex;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--bg2);
+      border-top: 1px solid var(--border2);
+      padding: 8px 16px 20px;
+      gap: 8px;
+      z-index: 50;
+    }
+    .mobile-nav .btn { flex: 1; text-align: center; padding: 10px 6px; font-size: 12px; }
+    .mobile-nav .btn.active { color: var(--accent); border-color: rgba(122,171,138,.4); background: rgba(77,125,94,.15); }
+
+    /* modal full screen on mobile */
+    .overlay { padding: 0; align-items: flex-end; }
+    .modal {
+      border-radius: var(--radius2) var(--radius2) 0 0;
+      max-width: 100%;
+      max-height: 92vh;
+      overflow-y: auto;
+      animation: slideUpMobile .2s ease;
+    }
+    @keyframes slideUpMobile { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    /* task cards on mobile — bigger tap targets */
+    .task-card { padding: 11px 12px; }
+    .task-action { font-size: 13px; }
+    .task-project { font-size: 10px; }
+    .card-btn { padding: 4px 8px; font-size: 11px; }
+    .check { width: 18px; height: 18px; font-size: 11px; }
+  }
+
+  @media (min-width: 769px) {
+    .day-strip, .day-view, .mobile-nav { display: none !important; }
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="header-left">
+      <h1>Personal Planner</h1>
+      <span class="week-label" id="week-label"></span>
+    </div>
+    <div class="header-right">
+      <div class="week-nav">
+        <button class="btn ghost" onclick="prevWeek()">← prev</button>
+        <button class="btn ghost" onclick="todayWeek()">today</button>
+        <button class="btn ghost" onclick="nextWeek()">next →</button>
+      </div>
+      <div class="view-tabs">
+        <button class="view-tab active" id="tab-week" onclick="showWeek()">Week</button>
+        <button class="view-tab" id="tab-proj" onclick="showProjects()">Projects</button>
+      </div>
+      <button class="btn accent" onclick="toggleBrief('brief')">Daily brief</button>
+      <button class="btn accent" onclick="toggleBrief('debrief')">End of day</button>
+      <button class="btn export-btn" onclick="exportData()">Export</button>
+      <button class="btn import-btn" onclick="importTrigger()">Import</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+  </header>
+
+  <!-- Daily brief panel -->
+  <div id="brief-panel">
+    <div class="brief-header">
+      <h3>Copy this into Claude for your personal daily brief</h3>
+      <button class="btn ghost" onclick="toggleBrief('brief')" style="padding:4px 8px">✕</button>
+    </div>
+    <div id="brief-text"></div>
+    <div class="brief-footer">
+      <button class="btn accent" onclick="copyPanel('brief-text','copy-confirm-brief')">Copy to clipboard</button>
+      <span class="copy-confirm" id="copy-confirm-brief">Copied ✓</span>
+    </div>
+  </div>
+
+  <!-- End of day panel -->
+  <div id="debrief-panel">
+    <div class="brief-header">
+      <h3>Copy this into Claude for your personal end of day debrief</h3>
+      <button class="btn ghost" onclick="toggleBrief('debrief')" style="padding:4px 8px">✕</button>
+    </div>
+    <div id="debrief-text"></div>
+    <div class="brief-footer">
+      <button class="btn accent" onclick="copyPanel('debrief-text','copy-confirm-debrief')">Copy to clipboard</button>
+      <span class="copy-confirm" id="copy-confirm-debrief">Copied ✓</span>
+    </div>
+  </div>
+
+  <!-- Week view -->
+  <div id="view-week">
+    <!-- Mobile: day strip + single day view -->
+    <div class="day-strip" id="day-strip"></div>
+    <div class="day-view" id="day-view"></div>
+    <!-- Desktop: full grid -->
+    <div class="columns" id="columns"></div>
+    <p class="kbd-hint">Press <kbd style="background:var(--surface);border:1px solid var(--border2);border-radius:3px;padding:1px 5px;font-family:'DM Mono',monospace;font-size:10px">N</kbd> to add a task</p>
+  </div>
+
+  <!-- Projects view -->
+  <div id="view-projects">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <input type="text" id="proj-search" placeholder="Filter projects..." oninput="renderProjects()" style="max-width:300px">
+      <button class="btn ghost" id="proj-back-btn" onclick="clearProjDetail()" style="display:none">← All projects</button>
+    </div>
+    <div id="proj-content"></div>
+  </div>
+
+</div>
+
+<!-- Mobile bottom nav -->
+<div class="mobile-nav">
+  <button class="btn accent" onclick="toggleBrief('brief')">Brief</button>
+  <button class="btn accent" onclick="toggleBrief('debrief')">End of day</button>
+  <button class="btn" onclick="openModal(null, activeMobileDay)">+ Task</button>
+  <button class="btn" id="mobile-proj-btn" onclick="toggleMobileProjects()">Projects</button>
+  <button class="btn" onclick="exportData()">Export</button>
+</div>
+
+<!-- Next week modal -->
+<div class="overlay" id="nw-overlay" onclick="if(event.target===this)closeNextWeekModal()" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <span class="modal-title">Move to next week</span>
+      <button class="modal-close" onclick="closeNextWeekModal()">×</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Which day next week?</label>
+      <select id="nw-day">
+        <option value="Mon">Monday</option>
+        <option value="Tue">Tuesday</option>
+        <option value="Wed">Wednesday</option>
+        <option value="Thu">Thursday</option>
+        <option value="Fri">Friday</option>
+        <option value="Sat">Saturday</option>
+        <option value="Sun">Sunday</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Reason *</label>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);transition:border-color .15s" id="nw-label-planned">
+          <input type="radio" name="nw-reason" value="planned" id="nw-planned" style="width:auto;margin-top:2px;accent-color:var(--green)">
+          <span>
+            <span style="font-size:12px;color:var(--text);display:block;margin-bottom:2px">Planned</span>
+            <span style="font-size:11px;color:var(--text3)">This was always going to happen next week — timing shifted</span>
+          </span>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);transition:border-color .15s" id="nw-label-deferred">
+          <input type="radio" name="nw-reason" value="deferred" id="nw-deferred" style="width:auto;margin-top:2px;accent-color:var(--amber)">
+          <span>
+            <span style="font-size:12px;color:var(--text);display:block;margin-bottom:2px">Didn't get to it</span>
+            <span style="font-size:11px;color:var(--text3)">Adds to the deferred counter — will be flagged in debriefs</span>
+          </span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn ghost" onclick="closeNextWeekModal()">Cancel</button>
+      <button class="btn accent" onclick="confirmNextWeek()">Move to next week</button>
+    </div>
+  </div>
+</div>
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Add task</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Project *</label>
+      <input id="f-project" placeholder="e.g. Fitness, Home, Side project, Travel planning">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Next action *
+        <span class="form-hint"> — specific beats vague</span>
+      </label>
+      <textarea id="f-action" placeholder="❌  Go to the gym&#10;✓   Complete 30 min strength training — legs day"></textarea>
+    </div>
+
+    <div class="form-row-2">
+      <div class="form-group">
+        <label class="form-label">Category *</label>
+        <select id="f-category">
+          <option value="selfcare">Self-care</option>
+          <option value="home">Home</option>
+          <option value="social">Social</option>
+          <option value="growth">Personal growth</option>
+          <option value="health">Health</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Day *</label>
+        <select id="f-day">
+          <option value="Mon">Monday</option>
+          <option value="Tue">Tuesday</option>
+          <option value="Wed">Wednesday</option>
+          <option value="Thu">Thursday</option>
+          <option value="Fri">Friday</option>
+          <option value="Sat">Saturday</option>
+          <option value="Sun">Sunday</option>
+          <option value="Backlog">Backlog</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Recurrence</label>
+      <select id="f-recur">
+        <option value="">None</option>
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="biweekly">Bi-weekly</option>
+        <option value="monthly">Monthly</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Context / notes</label>
+      <textarea id="f-notes" placeholder="Links, reminders, relevant context..."></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn accent" onclick="saveTask()">Save task</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DAYS     = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun','Backlog'];
+const DAY_FULL = { Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday', Fri:'Friday', Sat:'Saturday', Sun:'Sunday', Backlog:'Backlog' };
+const CAT_CLS  = { selfcare:'tag-selfcare', home:'tag-home', social:'tag-social', growth:'tag-growth', health:'tag-health', other:'tag-other' };
+
+let tasks = [], editId = null, dragId = null, weekOffset = 0, activeProjName = null;
+let activeMobileDay = getTodayShortSafe();
+
+// ── Storage ──────────────────────────────────
+function save() {
+  try {
+    localStorage.setItem('ptp_tasks', JSON.stringify(tasks));
+    localStorage.setItem('ptp_offset', weekOffset);
+  } catch(e) {}
+}
+function load() {
+  try {
+    const d = localStorage.getItem('ptp_tasks');   if (d) tasks = JSON.parse(d);
+    const o = localStorage.getItem('ptp_offset');  if (o) weekOffset = parseInt(o);
+  } catch(e) {}
+}
+
+// ── Week helpers ─────────────────────────────
+function getMonday(offset) {
+  const now = new Date(), d = now.getDay();
+  const diff = d === 0 ? -6 : 1 - d;
+  const mon = new Date(now);
+  mon.setDate(now.getDate() + diff + offset * 7);
+  mon.setHours(0,0,0,0);
+  return mon;
+}
+function weekKey(offset)        { return getMonday(offset).toISOString().slice(0,10); }
+function formatWeekLabel(offset) {
+  const s = getMonday(offset), e = new Date(s);
+  e.setDate(e.getDate() + 6);
+  const f = d => d.toLocaleDateString('en-CA', { month:'short', day:'numeric' });
+  return `${f(s)} – ${f(e)}`;
+}
+function getDayDate(offset, idx) {
+  const d = new Date(getMonday(offset));
+  d.setDate(d.getDate() + idx);
+  return d.toLocaleDateString('en-CA', { month:'short', day:'numeric' });
+}
+function getTodayShort() {
+  return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
+}
+function getTodayShortSafe() {
+  const d = getTodayShort();
+  return DAYS.includes(d) ? d : 'Mon';
+}
+function uid()  { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Nav ──────────────────────────────────────
+function prevWeek()  { weekOffset--; save(); render(); }
+function nextWeek()  { weekOffset++; save(); render(); }
+function todayWeek() { weekOffset = 0; save(); render(); }
+
+// ── View toggle ──────────────────────────────
+function showWeek() {
+  document.getElementById('view-week').style.display     = 'block';
+  document.getElementById('view-projects').style.display = 'none';
+  document.getElementById('tab-week').classList.add('active');
+  document.getElementById('tab-proj').classList.remove('active');
+  render();
+}
+function showProjects() {
+  document.getElementById('view-week').style.display     = 'none';
+  document.getElementById('view-projects').style.display = 'flex';
+  document.getElementById('tab-week').classList.remove('active');
+  document.getElementById('tab-proj').classList.add('active');
+  renderProjects();
+}
+
+// ── Render ───────────────────────────────────
+function isMobile() { return window.innerWidth <= 768; }
+
+function render() {
+  document.getElementById('week-label').textContent = formatWeekLabel(weekOffset);
+  if (isMobile()) {
+    renderMobile();
+  } else {
+    renderDesktop();
+  }
+}
+
+function renderMobile() {
+  const wk = weekKey(weekOffset);
+  const todayDay = weekOffset === 0 ? getTodayShort() : null;
+
+  // Day strip
+  const strip = document.getElementById('day-strip');
+  strip.innerHTML = '';
+  DAYS.forEach((day, idx) => {
+    const isBacklog = day === 'Backlog';
+    const dayTasks = isBacklog
+      ? tasks.filter(t => t.day === 'Backlog')
+      : tasks.filter(t => t.day === day && t.week === wk);
+    const dateStr = !isBacklog ? getDayDate(weekOffset, idx) : '';
+    const pill = document.createElement('div');
+    pill.className = 'day-pill' + (day === activeMobileDay ? ' active' : '') + (dayTasks.length ? ' has-tasks' : '');
+    pill.innerHTML = `
+      <span class="day-pill-name">${isBacklog ? '📥' : day}</span>
+      ${dateStr ? `<span class="day-pill-date">${dateStr}</span>` : ''}
+      ${dayTasks.length && day !== activeMobileDay ? '<span class="day-pill-dot"></span>' : ''}`;
+    pill.onclick = () => { activeMobileDay = day; renderMobile(); };
+    strip.appendChild(pill);
+  });
+
+  // Day view
+  const view = document.getElementById('day-view');
+  view.innerHTML = '';
+  const isBacklog = activeMobileDay === 'Backlog';
+  const dayTasks = isBacklog
+    ? tasks.filter(t => t.day === 'Backlog')
+    : tasks.filter(t => t.day === activeMobileDay && t.week === wk);
+
+  const dayIdx = DAYS.indexOf(activeMobileDay);
+  const dateStr = !isBacklog ? getDayDate(weekOffset, dayIdx) : '';
+  const isToday = activeMobileDay === todayDay;
+
+  const hdr = document.createElement('div');
+  hdr.className = 'day-view-header';
+  hdr.innerHTML = `
+    <div>
+      <div class="day-view-title" style="${isToday ? 'color:var(--accent)' : ''}">${DAY_FULL[activeMobileDay]}</div>
+      ${dateStr ? `<div class="day-view-date">${dateStr}</div>` : ''}
+    </div>
+    <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${dayTasks.length} task${dayTasks.length !== 1 ? 's' : ''}</span>`;
+  view.appendChild(hdr);
+
+  if (!dayTasks.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'padding:24px 0;text-align:center;color:var(--text3);font-size:12px';
+    empty.textContent = isBacklog ? 'Backlog is clear.' : 'Nothing scheduled — enjoy the space.';
+    view.appendChild(empty);
+  } else {
+    dayTasks.forEach(t => view.appendChild(makeCard(t)));
+  }
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-btn';
+  addBtn.textContent = '+ add task';
+  addBtn.onclick = () => openModal(null, activeMobileDay);
+  view.appendChild(addBtn);
+}
+
+// ── Render columns (desktop) ──────────────────
+function renderDesktop() {
+  const wk = weekKey(weekOffset);
+  const todayDay = weekOffset === 0 ? getTodayShort() : null;
+  const container = document.getElementById('columns');
+  container.innerHTML = '';
+
+  DAYS.forEach((day, idx) => {
+    const isBacklog = day === 'Backlog';
+    const col = document.createElement('div');
+    col.className = 'col' + (day === todayDay ? ' today' : '') + (isBacklog ? ' backlog' : '');
+
+    col.addEventListener('dragover',  e => { e.preventDefault(); col.classList.add('drag-over'); });
+    col.addEventListener('dragleave', e => { if (!col.contains(e.relatedTarget)) col.classList.remove('drag-over'); });
+    col.addEventListener('drop',      e => { e.preventDefault(); col.classList.remove('drag-over'); dropTask(day, wk); });
+
+    // Backlog is global — show all backlog tasks regardless of week
+    const dayTasks = isBacklog
+      ? tasks.filter(t => t.day === 'Backlog')
+      : tasks.filter(t => t.day === day && t.week === wk);
+
+    const dateStr  = !isBacklog ? getDayDate(weekOffset, idx) : '';
+
+    const hdr = document.createElement('div');
+    hdr.className = 'col-header';
+    hdr.innerHTML = `
+      <div class="col-day-info">
+        <span class="col-day">${DAY_FULL[day]}</span>
+        ${dateStr ? `<span class="col-date">${dateStr}</span>` : ''}
+      </div>
+      <span class="col-count${dayTasks.length ? ' has' : ''}">${dayTasks.length}</span>`;
+    col.appendChild(hdr);
+
+    dayTasks.forEach(t => col.appendChild(makeCard(t)));
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-btn';
+    addBtn.textContent = '+ add task';
+    addBtn.onclick = () => openModal(null, day);
+    col.appendChild(addBtn);
+
+    container.appendChild(col);
+  });
+}
+
+// ── Task card ────────────────────────────────
+function makeCard(t) {
+  const card = document.createElement('div');
+  card.className = 'task-card' + (t.done ? ' done' : '') + (t.moves >= 3 ? ' flagged' : '');
+  card.draggable = true;
+  card.addEventListener('dragstart', () => { dragId = t.id; setTimeout(() => card.style.opacity = '.35', 0); });
+  card.addEventListener('dragend',   () => { dragId = null;  card.style.opacity = '1'; });
+
+  // top row
+  const top  = document.createElement('div'); top.className = 'card-top';
+  const chk  = document.createElement('div'); chk.className = 'check' + (t.done ? ' checked' : '');
+  chk.textContent = t.done ? '✓' : '';
+  chk.onclick = () => toggleDone(t.id);
+
+  const body = document.createElement('div'); body.className = 'card-body';
+  body.innerHTML = `<div class="task-project">${esc(t.project)}</div><div class="task-action">${esc(t.action)}</div>`;
+
+  top.appendChild(chk); top.appendChild(body);
+  card.appendChild(top);
+
+  // meta row
+  const meta = document.createElement('div'); meta.className = 'card-meta';
+  const tag  = document.createElement('span');
+  tag.className = 'tag ' + (CAT_CLS[t.category] || 'tag-other');
+  tag.textContent = t.category;
+  meta.appendChild(tag);
+
+  if (t.recur) {
+    const r = document.createElement('span'); r.className = 'recur-tag';
+    r.textContent = '↻ ' + t.recur; meta.appendChild(r);
+  }
+  if (t.moves > 0) {
+    const mb = document.createElement('span');
+    mb.className = 'move-count' + (t.moves >= 3 ? ' flagged' : '');
+    mb.textContent = '↔ ' + t.moves; meta.appendChild(mb);
+  }
+  if (t.defers > 0) {
+    const db = document.createElement('span');
+    db.className = 'defer-count' + (t.defers >= 3 ? ' flagged' : '');
+    db.textContent = '⏭ ' + t.defers; meta.appendChild(db);
+  }
+  card.appendChild(meta);
+
+  // notes
+  if (t.notes) {
+    const n = document.createElement('div'); n.className = 'task-notes';
+    n.textContent = t.notes; card.appendChild(n);
+  }
+
+  // action row
+  const row  = document.createElement('div'); row.className = 'card-actions';
+  const nw   = document.createElement('button'); nw.className = 'card-btn'; nw.textContent = 'next week'; nw.onclick = () => openNextWeekModal(t.id);
+  const edit = document.createElement('button'); edit.className = 'card-btn'; edit.textContent = 'edit'; edit.onclick = () => openModal(t.id);
+  const del  = document.createElement('button'); del.className = 'card-btn del'; del.textContent = 'delete'; del.onclick = () => deleteTask(t.id);
+  if (t.day !== 'Backlog') row.appendChild(nw);
+  row.appendChild(edit); row.appendChild(del);
+  card.appendChild(row);
+
+  return card;
+}
+
+function dropTask(toDay, wk) {
+  if (!dragId) return;
+  const t = tasks.find(x => x.id === dragId); if (!t) return;
+  const fromBacklog = t.day === 'Backlog';
+  const toBacklog   = toDay === 'Backlog';
+  const sameDay     = t.day === toDay;
+  const sameWeek    = t.week === wk;
+  if (!sameDay || !sameWeek) {
+    // increment move counter only when shuffling between days within the same week (not involving backlog)
+    if (!sameDay && !toBacklog && !fromBacklog && sameWeek) {
+      t.moves = (t.moves || 0) + 1;
+    }
+    t.day = toDay;
+    // always stamp the current week when dropping onto a day (fixes backlog → day week bug)
+    if (!toBacklog) t.week = wk;
+    save(); render();
+  }
+}
+
+function toggleDone(id) { const t = tasks.find(x => x.id === id); if (t) { t.done = !t.done; save(); render(); } }
+function deleteTask(id)  { if (!confirm('Delete this task?')) return; tasks = tasks.filter(x => x.id !== id); save(); render(); }
+
+// ── Next week modal ───────────────────────────
+let nextWeekTaskId = null;
+
+function openNextWeekModal(id) {
+  nextWeekTaskId = id;
+  const t = tasks.find(x => x.id === id); if (!t) return;
+  // default to same day next week if possible
+  document.getElementById('nw-day').value = t.day in DAY_FULL && t.day !== 'Backlog' ? t.day : 'Mon';
+  // clear radio
+  document.querySelectorAll('input[name="nw-reason"]').forEach(r => r.checked = false);
+  document.getElementById('nw-overlay').style.display = 'flex';
+}
+function closeNextWeekModal() {
+  document.getElementById('nw-overlay').style.display = 'none';
+  nextWeekTaskId = null;
+}
+function confirmNextWeek() {
+  const t = tasks.find(x => x.id === nextWeekTaskId); if (!t) return;
+  const reason = document.querySelector('input[name="nw-reason"]:checked');
+  if (!reason) { alert('Please select a reason.'); return; }
+  const toDay = document.getElementById('nw-day').value;
+  const nextWk = weekKey(weekOffset + 1);
+  t.day = toDay;
+  t.week = nextWk;
+  if (reason.value === 'deferred') t.defers = (t.defers || 0) + 1;
+  // moves counter does NOT increment
+  save(); closeNextWeekModal(); render();
+}
+
+// ── Modal ────────────────────────────────────
+function openModal(id, defaultDay) {
+  editId = id || null;
+  const t = id ? tasks.find(x => x.id === id) : null;
+  document.getElementById('modal-title').textContent = id ? 'Edit task' : 'Add task';
+  document.getElementById('f-project').value  = t ? t.project  : '';
+  document.getElementById('f-action').value   = t ? t.action   : '';
+  document.getElementById('f-category').value = t ? (t.category || 'selfcare') : 'selfcare';
+  document.getElementById('f-day').value      = t ? t.day : (defaultDay || getTodayShortSafe());
+  document.getElementById('f-recur').value    = t ? t.recur  : '';
+  document.getElementById('f-notes').value    = t ? t.notes  : '';
+  document.getElementById('overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('f-project').focus(), 60);
+}
+function closeModal() { document.getElementById('overlay').style.display = 'none'; editId = null; }
+
+function saveTask() {
+  const project = document.getElementById('f-project').value.trim();
+  const action  = document.getElementById('f-action').value.trim();
+  if (!project || !action) { alert('Project and next action are required.'); return; }
+  const wk = weekKey(weekOffset);
+
+  if (editId) {
+    const t = tasks.find(x => x.id === editId);
+    if (t) Object.assign(t, {
+      project, action,
+      category: document.getElementById('f-category').value,
+      day:      document.getElementById('f-day').value,
+      recur:    document.getElementById('f-recur').value,
+      notes:    document.getElementById('f-notes').value.trim()
+    });
+  } else {
+    tasks.push({
+      id: uid(), project, action,
+      category: document.getElementById('f-category').value,
+      day:      document.getElementById('f-day').value,
+      recur:    document.getElementById('f-recur').value,
+      notes:    document.getElementById('f-notes').value.trim(),
+      done: false, moves: 0, week: wk,
+      created: new Date().toISOString()
+    });
+  }
+  save(); closeModal();
+  if (document.getElementById('view-projects').style.display === 'flex') renderProjects(); else render();
+}
+
+// ── Projects ─────────────────────────────────
+function getProjects() {
+  const map = {};
+  tasks.forEach(t => {
+    if (!map[t.project]) map[t.project] = { name: t.project, total: 0, open: 0, done: 0 };
+    map[t.project].total++;
+    if (t.done) map[t.project].done++; else map[t.project].open++;
+  });
+  return Object.values(map).sort((a,b) => b.open - a.open);
+}
+
+function renderProjects() {
+  const q = (document.getElementById('proj-search') || {}).value || '';
+  const container = document.getElementById('proj-content');
+  document.getElementById('proj-back-btn').style.display = activeProjName ? 'inline-block' : 'none';
+
+  if (activeProjName) { renderProjDetail(activeProjName); return; }
+
+  const projs = getProjects().filter(p => !q || p.name.toLowerCase().includes(q.toLowerCase()));
+  if (!projs.length) {
+    container.innerHTML = '<p style="color:var(--text3);font-size:13px;margin-top:8px">No projects yet. Add tasks to create projects.</p>';
+    return;
+  }
+  let html = '<div class="proj-grid">';
+  projs.forEach(p => {
+    html += `<div class="proj-card" onclick="openProjDetail('${esc(p.name).replace(/'/g,"\\'")}')">
+      <div class="proj-card-name">${esc(p.name)}</div>
+      <div class="proj-card-stats"><b>${p.open}</b> open · <b>${p.done}</b> done · <b>${p.total}</b> total</div>
+    </div>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function openProjDetail(name)  { activeProjName = name;  renderProjects(); }
+function clearProjDetail()     { activeProjName = null;  renderProjects(); }
+
+function renderProjDetail(name) {
+  const pTasks = tasks.filter(t => t.project === name).sort((a,b) => a.week > b.week ? -1 : 1);
+  const rows = pTasks.map(t => {
+    const s = t.done ? '<span class="status-done">Done</span>' : '<span class="status-open">Open</span>';
+    return `<tr>
+      <td>${esc(t.action)}</td>
+      <td>${s}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px">${t.week || '—'}</td>
+      <td>${t.day}</td>
+      <td style="font-family:'DM Mono',monospace;text-align:center">${t.moves || 0}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('proj-content').innerHTML = `
+    <div class="proj-detail">
+      <div class="proj-detail-title">${esc(name)}</div>
+      <table>
+        <thead><tr>
+          <th style="width:44%">Action</th>
+          <th style="width:10%">Status</th>
+          <th style="width:16%">Week</th>
+          <th style="width:13%">Day</th>
+          <th style="width:10%;text-align:center">Moves</th>
+        </tr></thead>
+        <tbody>${rows || '<tr><td colspan="5" style="color:var(--text3)">No tasks for this project yet.</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+
+// ── Daily brief ──────────────────────────────
+function buildBriefText() {
+  const wk = weekKey(weekOffset);
+  const wt = tasks.filter(t => t.week === wk);
+  if (!wt.length) return null;
+
+  const today = new Date().toLocaleDateString('en-CA', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  const lines = [`PERSONAL DAILY BRIEF — ${today}`, `Week: ${formatWeekLabel(weekOffset)}`, ''];
+
+  DAYS.forEach(day => {
+    const dt = wt.filter(t => t.day === day);
+    if (!dt.length) return;
+    lines.push(`${DAY_FULL[day].toUpperCase()}:`);
+    dt.forEach(t => {
+      const flag   = t.moves >= 3 ? ` [MOVED ${t.moves}x — FLAGGED]` : '';
+      const defers = t.defers > 0 ? ` [DEFERRED ${t.defers}x]` : '';
+      const done   = t.done ? ' [DONE]' : '';
+      lines.push(`  • [${t.project}] ${t.action}${done}${flag}${defers}`);
+      if (t.notes) lines.push(`    Notes: ${t.notes}`);
+    });
+    lines.push('');
+  });
+
+  lines.push('Please:');
+  lines.push('1. Tell me what to focus on first today');
+  lines.push('2. Flag any tasks moved 3+ times that need a decision');
+  lines.push('3. Give your top recommendation for the week');
+  lines.push('4. Rewrite any vague actions as concrete next steps');
+  lines.push('5. Note anything overloaded or under-scheduled');
+  return lines.join('\n');
+}
+
+// ── End of day debrief ────────────────────────
+function buildDebriefText() {
+  const wk = weekKey(weekOffset);
+  const wt = tasks.filter(t => t.week === wk);
+  if (!wt.length) return null;
+
+  const todayShort = getTodayShort();
+  const today = new Date().toLocaleDateString('en-CA', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  const todayTasks = wt.filter(t => t.day === todayShort);
+  const otherTasks = wt.filter(t => t.day !== todayShort && t.day !== 'Backlog');
+
+  const lines = [`PERSONAL END OF DAY — ${today}`, `Week: ${formatWeekLabel(weekOffset)}`, ''];
+
+  // Today's tasks broken into done / not done
+  const done    = todayTasks.filter(t => t.done);
+  const notDone = todayTasks.filter(t => !t.done);
+  const moved   = wt.filter(t => t.moves > 0);
+
+  lines.push('COMPLETED TODAY:');
+  if (done.length) {
+    done.forEach(t => lines.push(`  ✓ [${t.project}] ${t.action}`));
+  } else {
+    lines.push('  (none marked complete)');
+  }
+  lines.push('');
+
+  lines.push('NOT COMPLETED TODAY:');
+  if (notDone.length) {
+    notDone.forEach(t => {
+      const flag = t.moves >= 3 ? ` [MOVED ${t.moves}x — FLAGGED]` : '';
+      lines.push(`  ✗ [${t.project}] ${t.action}${flag}`);
+    });
+  } else {
+    lines.push('  (everything done — great work)');
+  }
+  lines.push('');
+
+  lines.push('TASKS MOVED THIS WEEK (all days):');
+  if (moved.length) {
+    moved.forEach(t => lines.push(`  ↔ [${t.project}] ${t.action} — moved ${t.moves}x, currently on ${t.day}`));
+  } else {
+    lines.push('  (no tasks moved this week)');
+  }
+  lines.push('');
+
+  // deferred tasks (across all weeks)
+  const deferred = tasks.filter(t => t.defers > 0).sort((a,b) => b.defers - a.defers);
+  lines.push('DEFERRED TO A FUTURE WEEK (all time):');
+  if (deferred.length) {
+    deferred.forEach(t => lines.push(`  ⏭ [${t.project}] ${t.action} — deferred ${t.defers}x, currently on ${t.day} (${t.week})`));
+  } else {
+    lines.push('  (no tasks have been deferred to a future week)');
+  }
+  lines.push('');
+
+  lines.push('REST OF WEEK (remaining open tasks):');
+  const remaining = otherTasks.filter(t => !t.done);
+  if (remaining.length) {
+    DAYS.filter(d => d !== todayShort && d !== 'Backlog').forEach(day => {
+      const dt = remaining.filter(t => t.day === day);
+      if (dt.length) {
+        lines.push(`  ${DAY_FULL[day]}:`);
+        dt.forEach(t => lines.push(`    • [${t.project}] ${t.action}`));
+      }
+    });
+  } else {
+    lines.push('  (no remaining tasks scheduled)');
+  }
+  lines.push('');
+
+  lines.push('Please:');
+  lines.push('1. Reflect back what got done and acknowledge it');
+  lines.push('2. For anything not completed, tell me whether to reschedule it tomorrow, move it to backlog, or have a conversation about why it keeps not getting done');
+  lines.push('3. Flag any tasks that have now been incomplete across multiple days — name them specifically');
+  lines.push('4. Tell me if tomorrow looks realistic given what didn\'t get done today');
+  lines.push('5. One closing thought on the day');
+  return lines.join('\n');
+}
+
+let briefOpen = false, debriefOpen = false;
+
+function toggleBrief(type) {
+  const isDebrief = type === 'debrief';
+  const panelId   = isDebrief ? 'debrief-panel' : 'brief-panel';
+  const otherId   = isDebrief ? 'brief-panel'   : 'debrief-panel';
+  const openFlag  = isDebrief ? debriefOpen      : briefOpen;
+
+  // close the other panel if open
+  document.getElementById(otherId).style.display = 'none';
+  if (isDebrief) briefOpen = false; else debriefOpen = false;
+
+  const nowOpen = !openFlag;
+  if (isDebrief) debriefOpen = nowOpen; else briefOpen = nowOpen;
+
+  if (nowOpen) {
+    const txt = isDebrief ? buildDebriefText() : buildBriefText();
+    if (!txt) { alert('No tasks this week yet. Add some tasks first.'); if (isDebrief) debriefOpen=false; else briefOpen=false; return; }
+    document.getElementById(isDebrief ? 'debrief-text' : 'brief-text').textContent = txt;
+    const panel = document.getElementById(panelId);
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  } else {
+    document.getElementById(panelId).style.display = 'none';
+  }
+}
+
+function copyPanel(textId, confirmId) {
+  const txt = document.getElementById(textId).textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    const el = document.getElementById(confirmId);
+    el.style.opacity = '1';
+    setTimeout(() => el.style.opacity = '0', 2400);
+  });
+}
+
+// ── Export / Import ───────────────────────────
+function exportData() {
+  const blob = new Blob([JSON.stringify({ tasks, weekOffset, exported: new Date().toISOString() }, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `personal-planner-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+function importTrigger() { document.getElementById('import-file').click(); }
+function importData(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (d.tasks && Array.isArray(d.tasks)) {
+        if (confirm(`Import ${d.tasks.length} tasks? This will merge with your current tasks.`)) {
+          const ids = new Set(tasks.map(t => t.id));
+          d.tasks.forEach(t => { if (!ids.has(t.id)) tasks.push(t); });
+          if (d.weekOffset !== undefined) weekOffset = d.weekOffset;
+          save(); render();
+        }
+      } else { alert('Invalid backup file.'); }
+    } catch(err) { alert('Could not read file.'); }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function showMobileProjects() { toggleMobileProjects(true); }
+
+function toggleMobileProjects(forceOpen) {
+  const weekEl = document.getElementById('view-week');
+  const projEl = document.getElementById('view-projects');
+  const btn    = document.getElementById('mobile-proj-btn');
+  const projVisible = projEl.style.display === 'flex';
+  const open = forceOpen !== undefined ? forceOpen : !projVisible;
+  if (open) {
+    weekEl.style.display = 'none';
+    projEl.style.display = 'flex';
+    btn.textContent = '← Week';
+    btn.classList.add('active');
+    renderProjects();
+  } else {
+    projEl.style.display = 'none';
+    weekEl.style.display = 'block';
+    btn.textContent = 'Projects';
+    btn.classList.remove('active');
+  }
+}
+
+// re-render on resize so switching desktop↔mobile works
+window.addEventListener('resize', () => render());
+
+// ── Keyboard shortcuts ────────────────────────
+document.addEventListener('keydown', e => {
+  const active = document.activeElement.tagName;
+  if ((e.key === 'n' || e.key === 'N') && !['INPUT','TEXTAREA','SELECT'].includes(active)) {
+    openModal(null, getTodayShort() in DAY_FULL ? getTodayShort() : 'Mon');
+  }
+  if (e.key === 'Escape') closeModal();
+});
+
+// ── Init ──────────────────────────────────────
+load();
+render();
+</script>
+</body>
+</html>
